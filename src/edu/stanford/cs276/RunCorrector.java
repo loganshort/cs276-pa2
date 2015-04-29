@@ -3,7 +3,11 @@ package edu.stanford.cs276;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+
+import edu.stanford.cs276.util.Pair;
 
 public class RunCorrector {
 
@@ -73,44 +77,35 @@ public class RunCorrector {
 		int totalCount = 0;
 		int yourCorrectCount = 0;
 		String query = null;
-		/*query = "invalueable way to see what";
-		System.out.println(query);
-		System.out.println(Math.log(nsm.getLikelihood(query, query, 0)));
-		System.out.println(languageModel.getQueryProb(query));
-		String query2 = "invaluable way to see what";
-		System.out.println(query2);
-		System.out.println(Math.log(nsm.getLikelihood(query, query2, 1)));
-		System.out.println(languageModel.getQueryProb(query2));*/
 		
 		/*
 		 * Each line in the file represents one query.  We loop over each query and find
 		 * the most likely correction
 		 */
 		while ((query = queriesFileReader.readLine()) != null) {
-			
 			String correctedQuery = query;
 			/*
 			 * Your code here
 			 */
-			double bestLikelihood = Math.log(nsm.getLikelihood(query, query, 0))
-					+ MU*languageModel.getQueryProb(query);
+			double bestLikelihood = Math.log(nsm.getLikelihood(query, new ArrayList<Edit>())) +
+				MU*languageModel.getQueryProb(query);
 			// Edit distance 1 candidates
-			Set<String> candidates = cg.getCandidates(query, 1);
-			for (String candidate : candidates) {
-				double likelihood = Math.log(nsm.getLikelihood(query, candidate, 1));
-				likelihood += MU*languageModel.getQueryProb(candidate);
+			Set<Pair<String, List<Edit>>> candidates = cg.getCandidates(query, 1);
+			for (Pair<String, List<Edit>> candidate : candidates) {
+				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
 				if (likelihood > bestLikelihood) {
-					correctedQuery = candidate;
+					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;
 				}
 			}
 			// Edit distance 2 candidates
 			candidates = cg.getCandidates(query, 2);
-			for (String candidate : candidates) {
-				double likelihood = Math.log(nsm.getLikelihood(query, candidate, 2));
-				likelihood += MU*languageModel.getQueryProb(candidate);
+			for (Pair<String, List<Edit>> candidate : candidates) {
+				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
 				if (likelihood > bestLikelihood) {
-					correctedQuery = candidate;
+					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;
 				}
 			}
@@ -129,16 +124,20 @@ public class RunCorrector {
 
 			// If a gold file was provided, compare our correction to the gold correction
 			// and output the running accuracy
+			String goldQuery = "";
 			if (goldFileReader != null) {
-				String goldQuery = goldFileReader.readLine();
+				goldQuery = goldFileReader.readLine();
 				if (goldQuery.equals(correctedQuery)) {
 					yourCorrectCount++;
+				} else {
+					System.out.println(query);
+					System.out.println(correctedQuery);
+					System.out.println(goldQuery);
+					System.out.println((yourCorrectCount*1.0)/(totalCount*1.0 + 1));
 				}
 				totalCount++;
 			}
-			System.out.println(query);
-			System.out.println(correctedQuery);
-			System.out.println((yourCorrectCount*1.0)/(totalCount*1.0));
+
 		}
 		queriesFileReader.close();
 		long endTime   = System.currentTimeMillis();

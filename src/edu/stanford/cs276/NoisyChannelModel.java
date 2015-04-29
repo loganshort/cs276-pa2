@@ -5,6 +5,9 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.List;
+
+import edu.stanford.cs276.util.Pair;
 
 public class NoisyChannelModel implements Serializable {
 	
@@ -20,8 +23,8 @@ public class NoisyChannelModel implements Serializable {
 	 * Your code here ...
 	 */
 	
-	public double getLikelihood(String original, String R, int distance) {
-		return ecm_.editProbability(original, R, distance);
+	public double getLikelihood(String R, List<Edit> edits) {
+		return ecm_.editProbability(R, edits);
 	}
 	
 	// Don't call the constructor directly (singleton instance)
