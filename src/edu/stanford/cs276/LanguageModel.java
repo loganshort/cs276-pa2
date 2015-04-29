@@ -25,7 +25,7 @@ public class LanguageModel implements Serializable {
 	 * Your code here ...
 	 */
 	private static final double LAMBDA = 0.1;
-	private static final double LOG_ZERO = -100;
+	private static final double LOG_ZERO = -1000;
 	
 	Dictionary unigram = new Dictionary();
 	Dictionary bigram = new Dictionary();

@@ -78,6 +78,18 @@ public class RunCorrector {
 		int yourCorrectCount = 0;
 		String query = null;
 		
+		/*query = "alternativecertification for students stanferd";
+		ArrayList<Edit> edits1 = new ArrayList<Edit>();
+		System.out.println(Math.log(nsm.getLikelihood(query, edits1)));
+		System.out.println(MU*languageModel.getQueryProb(query));
+		String query2 = "alternative certification for students stanford";
+		ArrayList<Edit> edits2 = new ArrayList<Edit>();
+		edits2.add(new Edit(0, 'e', ' '));
+		edits2.add(new Edit(2, 'e', 'o'));
+		System.out.println(Math.log(nsm.getLikelihood(query2, edits2)));
+		System.out.println(MU*languageModel.getQueryProb(query2));*/
+		
+		
 		/*
 		 * Each line in the file represents one query.  We loop over each query and find
 		 * the most likely correction

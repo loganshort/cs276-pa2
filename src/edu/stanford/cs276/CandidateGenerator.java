@@ -49,17 +49,32 @@ public class CandidateGenerator implements Serializable {
 		}
 	}
 	
-	private boolean validateCandidate(String candidate) {
+	private int badWords(String query) {
+		String[] words = query.split(" ");
+		int numBads = 0;
+		for (int i = 0; i < words.length; i++) {
+			if (unigram.count(words[i]) == 0) {
+				numBads++;
+			}
+		}
+		return numBads;
+	}
+	
+	private boolean validateCandidate(String candidate, int originalBads) {
 		if (candidate.length() == 0 ||
 			candidate.charAt(candidate.length() - 1) == ' ' ||
 			candidate.charAt(0) == ' ') {
 			return false;
 		}
+		int numBads = 0;
 		String[] words = candidate.split(" ");
 		for (int i = 0; i < words.length; i++) {
 			if (unigram.count(words[i]) == 0) {
-				return false;
+				numBads++;
 			}
+		}
+		if (numBads >= originalBads && numBads > 0) {
+			return false;
 		}
 		return true;
 	}
@@ -76,6 +91,7 @@ public class CandidateGenerator implements Serializable {
 		Set<String> queries = new HashSet<String>();
 		Set<Pair<String, List<Edit>>> candidates = new HashSet<Pair<String, List<Edit>>>();
 		String querystr = query.getFirst();
+		int numBads = badWords(querystr);
 		// Addition candidates
 		for (int i = 0; i < querystr.length()+1; i++) {
 			for (int j = 0; j < alphabet.length; j++) {
@@ -83,7 +99,7 @@ public class CandidateGenerator implements Serializable {
 				if (i < querystr.length()) {
 					candidate += querystr.substring(i);
 				}
-				if (!queries.contains(candidate) && validateCandidate(candidate)) {
+				if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
 					queries.add(candidate);
 					char ins;
 					if (i == 0) {
@@ -104,7 +120,7 @@ public class CandidateGenerator implements Serializable {
 			if (i+1 < querystr.length()) {
 				candidate += querystr.substring(i+1);
 			}
-			if (!queries.contains(candidate) && validateCandidate(candidate)) {
+			if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
 				queries.add(candidate);
 				char del;
 				if (i == 0) {
@@ -125,7 +141,7 @@ public class CandidateGenerator implements Serializable {
 				if (i+1 < querystr.length()) {
 					candidate += querystr.substring(i+1);
 				}
-				if (!queries.contains(candidate) && validateCandidate(candidate)) {
+				if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
 					queries.add(candidate);
 					Edit e = createEdit(candidate, SWAP, alphabet[j], querystr.charAt(i));
 					List<Edit> edits = new ArrayList<Edit>(query.getSecond());
@@ -137,12 +153,12 @@ public class CandidateGenerator implements Serializable {
 		// transpose candidates
 		for (int i = 1; i < querystr.length(); i++) {
 			String candidate = querystr.substring(0,i-1);
-			candidate += querystr.charAt(i) + querystr.charAt(i-1);
+			candidate += querystr.substring(i,i+1) + querystr.substring(i-1,i);
 			if (i+1 < querystr.length()) {
 				candidate += querystr.substring(i+1);
 			}
 			Edit e = createEdit(candidate, TRANS, querystr.charAt(i-1), querystr.charAt(i));
-			if (!queries.contains(candidate) && validateCandidate(candidate)) {
+			if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
 				queries.add(candidate);
 				List<Edit> edits = new ArrayList<Edit>(query.getSecond());
 				edits.add(e);
