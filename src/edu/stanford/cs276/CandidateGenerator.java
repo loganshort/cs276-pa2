@@ -13,6 +13,8 @@ import edu.stanford.cs276.util.Pair;
 public class CandidateGenerator implements Serializable {
 
 	private Dictionary unigram = null;
+	private Dictionary bigram = null;
+
 	private static CandidateGenerator cg_;
 	
 	// Don't use the constructor since this is a Singleton instance
@@ -60,7 +62,7 @@ public class CandidateGenerator implements Serializable {
 		return numBads;
 	}
 	
-	private boolean validateCandidate(String candidate, int originalBads) {
+	private boolean validateCandidate(String candidate, int originalBads, char first, char orig, char edit) {
 		if (candidate.length() == 0 ||
 			candidate.charAt(candidate.length() - 1) == ' ' ||
 			candidate.charAt(0) == ' ') {
@@ -75,6 +77,12 @@ public class CandidateGenerator implements Serializable {
 		}
 		if (numBads >= originalBads && numBads > 0) {
 			return false;
+		} else if (numBads == 1 && originalBads == 2) {
+			if (edit == '\0') {
+				if (bigram.count(""+orig+first) < bigram.count(""+first+orig)) return false;
+			} else {
+				if (bigram.count(""+first+orig) < bigram.count(""+first+edit)) return false;
+			}
 		}
 		return true;
 	}
@@ -99,14 +107,14 @@ public class CandidateGenerator implements Serializable {
 				if (i < querystr.length()) {
 					candidate += querystr.substring(i);
 				}
-				if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
+				char ins;
+				if (i == 0) ins = '$';
+				else ins = querystr.charAt(i-1);
+				char end;
+				if (i == querystr.length()) end = '$';
+				else end = querystr.charAt(i);
+				if (!queries.contains(candidate) && validateCandidate(candidate, numBads, ins, end, alphabet[j])) {
 					queries.add(candidate);
-					char ins;
-					if (i == 0) {
-						ins = '$';
-					} else {
-						 ins = querystr.charAt(i-1);
-					}
 					Edit e = createEdit(candidate, INSERT, ins, alphabet[j]);
 					List<Edit> edits = new ArrayList<Edit>(query.getSecond());
 					edits.add(e);
@@ -120,14 +128,14 @@ public class CandidateGenerator implements Serializable {
 			if (i+1 < querystr.length()) {
 				candidate += querystr.substring(i+1);
 			}
-			if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
+			char del;
+			if (i == 0) del = '$';
+			else del = querystr.charAt(i-1);
+			char end;
+			if (i+1 == querystr.length()) end = '$';
+			else end = querystr.charAt(i);
+			if (!queries.contains(candidate) && validateCandidate(candidate, numBads, del, querystr.charAt(i), end)) {
 				queries.add(candidate);
-				char del;
-				if (i == 0) {
-					del = '$';
-				} else {
-					 del = querystr.charAt(i-1);
-				}
 				Edit e = createEdit(candidate, DELETE, del, querystr.charAt(i));
 				List<Edit> edits = new ArrayList<Edit>(query.getSecond());
 				edits.add(e);
@@ -141,7 +149,13 @@ public class CandidateGenerator implements Serializable {
 				if (i+1 < querystr.length()) {
 					candidate += querystr.substring(i+1);
 				}
-				if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
+				char first;
+				if (i == 0) {
+					first = '$';
+				} else {
+					 first = querystr.charAt(i-1);
+				}
+				if (!queries.contains(candidate) && validateCandidate(candidate, numBads, first, querystr.charAt(i), alphabet[j])) {
 					queries.add(candidate);
 					Edit e = createEdit(candidate, SWAP, alphabet[j], querystr.charAt(i));
 					List<Edit> edits = new ArrayList<Edit>(query.getSecond());
@@ -157,9 +171,9 @@ public class CandidateGenerator implements Serializable {
 			if (i+1 < querystr.length()) {
 				candidate += querystr.substring(i+1);
 			}
-			Edit e = createEdit(candidate, TRANS, querystr.charAt(i-1), querystr.charAt(i));
-			if (!queries.contains(candidate) && validateCandidate(candidate, numBads)) {
+			if (!queries.contains(candidate) && validateCandidate(candidate, numBads, querystr.charAt(i-1), querystr.charAt(i), '\0')) {
 				queries.add(candidate);
+				Edit e = createEdit(candidate, TRANS, querystr.charAt(i-1), querystr.charAt(i));
 				List<Edit> edits = new ArrayList<Edit>(query.getSecond());
 				edits.add(e);
 				candidates.add(new Pair<String, List<Edit>>(candidate, edits));
@@ -168,8 +182,9 @@ public class CandidateGenerator implements Serializable {
 		return candidates;
 	}
 	
-	public void loadDictionary(Dictionary unigram) {
+	public void loadDictionary(Dictionary unigram, Dictionary bigram) {
 		this.unigram = unigram;
+		this.bigram = bigram;
 	}
 
 }

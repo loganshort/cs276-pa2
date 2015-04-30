@@ -3,6 +3,7 @@ package edu.stanford.cs276;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 import java.util.Scanner;
 
 import edu.stanford.cs276.util.Dictionary;
@@ -13,8 +14,7 @@ public class EmpiricalCostModel implements EditCostModel{
 	private Dictionary types;
 	private Dictionary counts;
 	public static int INSERT = 0, DELETE = 1, SWAP = 2, TRANS = 3;
-	private static final double EDIT_PROB = 0.01;
-	private static final double MATCH_PROB = 0.95;
+	private static final double MATCH_PROB = 0.90;
 	public static final Character[] alphabet = {
 		'a','b','c','d','e','f','g','h','i','j','k','l','m','n',
 		'o','p','q','r','s','t','u','v','w','x','y','z',
@@ -82,23 +82,24 @@ public class EmpiricalCostModel implements EditCostModel{
 	
 	// You need to update this to calculate the proper empirical cost
 	@Override
-	public double editProbability(String original, Pair<String, Edit> R, int distance) {
-		if (original.equals(R.getFirst())) {
-			if (distance == 0) {
-				return MATCH_PROB;
+	public double editProbability(String R, List<Edit> edits) {
+		int distance = edits.size();
+		if (distance == 0) {
+			return MATCH_PROB;
+		}
+		double likelihood = 1.0;
+		for (int i = 0; i < distance; i++) {
+			Edit e = edits.get(i);
+			String c;
+			if (e.type == INSERT) {
+				c = "" + e.char1;
+			} else if (e.type == SWAP) {
+				c = "" + e.char2;
+			} else {
+				c = "" + e.char1 + e.char2;
 			}
-			return Math.pow(EDIT_PROB, distance);
+			likelihood *= (types.count("" + e.type + e.char1 + e.char2)+1)*1.0 / (counts.count(c) + alphabet.length);
 		}
-		Edit e = R.getSecond();
-		String c;
-		if (e.type == INSERT) {
-			c = "" + e.char1;
-		} else if (e.type == SWAP) {
-			c = "" + e.char2;
-		} else {
-			c = "" + e.char1 + e.char2;
-		}
-		double prob = (types.count("" + e.type + e.char1 + e.char2)+1)*1.0 / (counts.count(c) + alphabet.length);
-		return Math.pow(prob, distance);
+		return likelihood;
 	}
 }

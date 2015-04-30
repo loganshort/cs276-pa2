@@ -3,7 +3,10 @@ package edu.stanford.cs276;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+
 import edu.stanford.cs276.util.Pair;
 
 public class RunCorrector {
@@ -67,13 +70,25 @@ public class RunCorrector {
 		languageModel = LanguageModel.load(); 
 		nsm = NoisyChannelModel.load();
 		cg = CandidateGenerator.get();
-		cg.loadDictionary(languageModel.unigram);
+		cg.loadDictionary(languageModel.unigram, languageModel.bigram);
 		BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
 		nsm.setProbabilityType(uniformOrEmpirical);
 		
 		int totalCount = 0;
 		int yourCorrectCount = 0;
 		String query = null;
+		
+		/*query = "alternativecertification for students stanferd";
+		ArrayList<Edit> edits1 = new ArrayList<Edit>();
+		System.out.println(Math.log(nsm.getLikelihood(query, edits1)));
+		System.out.println(MU*languageModel.getQueryProb(query));
+		String query2 = "alternative certification for students stanford";
+		ArrayList<Edit> edits2 = new ArrayList<Edit>();
+		edits2.add(new Edit(0, 'e', ' '));
+		edits2.add(new Edit(2, 'e', 'o'));
+		System.out.println(Math.log(nsm.getLikelihood(query2, edits2)));
+		System.out.println(MU*languageModel.getQueryProb(query2));*/
+		
 		
 		/*
 		 * Each line in the file represents one query.  We loop over each query and find
@@ -84,13 +99,13 @@ public class RunCorrector {
 			/*
 			 * Your code here
 			 */
-			double bestLikelihood = Math.log(nsm.getLikelihood(query, new Pair(query, new Edit()), 0)) +
-				MU*languageModel.getQueryProb(query);
+			double bestLikelihood = Math.log(nsm.getLikelihood(query, new ArrayList<Edit>())) +
+				MU*languageModel.getQueryProb(query, "extra".equals(extra));
 			// Edit distance 1 candidates
-			Set<Pair<String, Edit>> candidates = cg.getCandidates(query, 1);
-			for (Pair<String, Edit> candidate : candidates) {
-				double likelihood = Math.log(nsm.getLikelihood(query, candidate, 1));
-				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
+			Set<Pair<String, List<Edit>>> candidates = cg.getCandidates(query, 1);
+			for (Pair<String, List<Edit>> candidate : candidates) {
+				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst(), "extra".equals(extra));
 				if (likelihood > bestLikelihood) {
 					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;
@@ -98,9 +113,9 @@ public class RunCorrector {
 			}
 			// Edit distance 2 candidates
 			candidates = cg.getCandidates(query, 2);
-			for (Pair<String, Edit> candidate : candidates) {
-				double likelihood = Math.log(nsm.getLikelihood(query, candidate, 2));
-				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
+			for (Pair<String, List<Edit>> candidate : candidates) {
+				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst(), "extra".equals(extra));
 				if (likelihood > bestLikelihood) {
 					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;

@@ -70,7 +70,7 @@ public class RunCorrector {
 		languageModel = LanguageModel.load(); 
 		nsm = NoisyChannelModel.load();
 		cg = CandidateGenerator.get();
-		cg.loadDictionary(languageModel.unigram);
+		cg.loadDictionary(languageModel.unigram, languageModel.bigram);
 		BufferedReader queriesFileReader = new BufferedReader(new FileReader(new File(queryFilePath)));
 		nsm.setProbabilityType(uniformOrEmpirical);
 		
@@ -100,12 +100,12 @@ public class RunCorrector {
 			 * Your code here
 			 */
 			double bestLikelihood = Math.log(nsm.getLikelihood(query, new ArrayList<Edit>())) +
-				MU*languageModel.getQueryProb(query);
+				MU*languageModel.getQueryProb(query, "extra".equals(extra));
 			// Edit distance 1 candidates
 			Set<Pair<String, List<Edit>>> candidates = cg.getCandidates(query, 1);
 			for (Pair<String, List<Edit>> candidate : candidates) {
 				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
-				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst(), "extra".equals(extra));
 				if (likelihood > bestLikelihood) {
 					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;
@@ -115,7 +115,7 @@ public class RunCorrector {
 			candidates = cg.getCandidates(query, 2);
 			for (Pair<String, List<Edit>> candidate : candidates) {
 				double likelihood = Math.log(nsm.getLikelihood(candidate.getFirst(), candidate.getSecond()));
-				likelihood += MU*languageModel.getQueryProb(candidate.getFirst());
+				likelihood += MU*languageModel.getQueryProb(candidate.getFirst(), "extra".equals(extra));
 				if (likelihood > bestLikelihood) {
 					correctedQuery = candidate.getFirst();
 					bestLikelihood = likelihood;
