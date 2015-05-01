@@ -133,8 +133,6 @@ public class LanguageModel implements Serializable {
 		for (String key : keys) {
 			turing.add("" + unigram.count(key));
 		}
-		System.out.println(turing.count("1"));
-		System.out.println(turing.count("2"));
 		System.out.println("Done.");
 	}
 	
